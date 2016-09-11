@@ -1,0 +1,6 @@
+﻿  logging.cpp
+  main.cpp
+  ShaderLoader.cpp
+ShaderLoader.cpp(28): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+logging.obj : error LNK2001: unresolved external symbol "char * GL_LOG_FILE" (?GL_LOG_FILE@@3PEADEA)
+C:\Users\Gebruiker\Dropbox\Project1\x64\Release\Project1.exe : fatal error LNK1120: 1 unresolved externals

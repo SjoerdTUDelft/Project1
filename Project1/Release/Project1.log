@@ -1,0 +1,5 @@
+﻿  logging.cpp
+  main.cpp
+  ShaderLoader.cpp
+logging.obj : error LNK2001: unresolved external symbol "char * GL_LOG_FILE" (?GL_LOG_FILE@@3PADA)
+C:\Users\Gebruiker\Dropbox\Project1\Release\Project1.exe : fatal error LNK1120: 1 unresolved externals
