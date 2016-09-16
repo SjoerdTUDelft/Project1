@@ -13,8 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Shaders">
-      <UniqueIdentifier>{61689352-e99c-40ed-8628-42919e2526c9}</UniqueIdentifier>
+    <Filter Include="shaders">
+      <UniqueIdentifier>{58f554c8-25fd-42fc-bcb1-735e25228ded}</UniqueIdentifier>
+      <Extensions>vert;frag;</Extensions>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -27,17 +28,32 @@
     <ClCompile Include="ShaderLoader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="objLoader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="3dObject.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="geometry.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <None Include="shaders\standardmaterial.frag">
+      <Filter>shaders</Filter>
+    </None>
     <None Include="shaders\testhader.frag">
-      <Filter>Shaders</Filter>
+      <Filter>shaders</Filter>
     </None>
     <None Include="shaders\testhader.vert">
-      <Filter>Shaders</Filter>
+      <Filter>shaders</Filter>
     </None>
-    <None Include="Shaders\blackstar.frag">
-      <Filter>Shaders</Filter>
+    <None Include="shaders\blackstar.frag">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\standardmaterial.vert">
+      <Filter>shaders</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -45,6 +61,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="logging.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="objLoader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="geometry.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

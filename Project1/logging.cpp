@@ -52,7 +52,9 @@ bool gl_log_err(const char* message, ...) {
 	vfprintf(file, message, argptr);
 	va_end(argptr);
 	va_start(argptr, message);
+	std::cout << "ERROR WRITING TO LOG" << std::endl;
 	vfprintf(stderr, message, argptr);
+	std::cout << std::endl;
 	va_end(argptr);
 	fclose(file);
 	return true;

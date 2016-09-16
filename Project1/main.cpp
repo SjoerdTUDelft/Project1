@@ -10,23 +10,20 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include <SFML/Window.hpp>
+#include <soil\SOIL.h>
 
 #include "logging.h"
-#include <soil\SOIL.h>
+#include "objLoader.h"
 #include "ShaderLoader.h"
 
 #define M_PI atan(1)*4
 using namespace std;
  
-void display(void);
-void centerOnScreen();
- 
-
-//  define the window position on screen
+ //  define the window position on screen
 int window_x;
 int window_y;
-int window_width = 580;
-int window_height = 580;
+int window_width = 680;
+int window_height = 680;
 sf::Window * windowref;
 char *window_title = "Sample OpenGL FreeGlut App";
 char * GL_LOG_FILE = "apple.txt";
@@ -38,7 +35,7 @@ double elapsedTime;
 GLuint vao;
 GLuint vbo;
 GLuint ebo;
-
+GLuint nbo;
 GLuint shader_program;
 GLuint texture;
 GLuint texture2;
@@ -47,12 +44,14 @@ glm::vec3 position(0.0f,0.0f,0.0f);
 glm::vec3 direction(0.0f, 0.0f, 0.0f);
 glm::vec3 camRight(0.0f, 0.0f, 0.0f);
 glm::vec2 mousePos( -1.0f, -1.0f);
-const float sensitivity = 0.08;
+const float sensitivity = 0.2;
 const float limit = 0.6* M_PI / 2.0f;
 float deltaTime = 0;
 float camPitch = 0;
 float camYaw = 0;
-const float speed = 10.0;
+const float minSpeed = 8.0;
+const float maxSpeed = 16.0;
+float speed = minSpeed;
 const float extraFov = 50;
 const float minFov = 35;
 float fovScalar = 1;
@@ -81,8 +80,13 @@ void processKeys() {
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
 		position -= direction * deltaTime * speed;
 	}
-	if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
-
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space)) {
+		position += glm::vec3(0.0,0.0,-1.0) * deltaTime * speed;
+	}
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
+		speed = maxSpeed;
+	} else {
+		speed = minSpeed;
 	}
 	if (sf::Mouse::isButtonPressed(sf::Mouse::Right)) {
 		fovScalar -= deltaTime * 2;
@@ -96,11 +100,7 @@ void processKeys() {
 	}
  
 };
-void centerOnScreen()
-{
-	window_x = (glutGet(GLUT_SCREEN_WIDTH) - window_width) / 2;
-	window_y = (glutGet(GLUT_SCREEN_HEIGHT) - window_height) / 2;
-}
+ 
 void _update_fps_counter() {
 	QueryPerformanceFrequency(&frequency);
 	QueryPerformanceCounter(&t2);
@@ -129,6 +129,10 @@ void _update_fps_counter() {
 //-------------------------------------------------------------------------
 void main(int argc, char **argv)
 {
+
+	geometry testObject = loadObj("./objects/testobject.obj");
+
+ 
 	sf::ContextSettings settings;
 	settings.depthBits = 24;
 	settings.stencilBits = 8;
@@ -136,7 +140,7 @@ void main(int argc, char **argv)
 
 	sf::Window window(sf::VideoMode(window_width, window_height, 32), "OpenGL", sf::Style::Default, settings);
 	windowref = &window;
-	windowref->setVerticalSyncEnabled(true);
+	//windowref->setVerticalSyncEnabled(true);
 	windowref->setMouseCursorGrabbed(true);
 	windowref->setKeyRepeatEnabled(false);
 	windowref->setMouseCursorVisible(false);
@@ -153,7 +157,7 @@ void main(int argc, char **argv)
 	glewExperimental = GL_TRUE;
 	glewInit();
 
-
+	
 	GLfloat points[] = {
 		-0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f,
 		0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
@@ -207,10 +211,9 @@ void main(int argc, char **argv)
 	glBindVertexArray(vao);
 
 	
-	glGenBuffers(1, &vbo);
 
-	glGenBuffers(1, &ebo);
 
+	/*
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(points), points, GL_STATIC_DRAW);
 
@@ -223,13 +226,25 @@ void main(int argc, char **argv)
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(sizeof(GLfloat) * 6));
 	glEnableVertexAttribArray(2);
+	*/
+	glGenBuffers(1, &vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferData(GL_ARRAY_BUFFER, testObject.vertices.size() * sizeof(glm::vec3), &testObject.vertices[0], GL_STATIC_DRAW);
+	
+	glGenBuffers(1, &ebo);
+	glBindBuffer(GL_ARRAY_BUFFER, ebo);
+	glBufferData(GL_ARRAY_BUFFER, testObject.uvs.size() * sizeof(glm::vec2), &testObject.uvs[0], GL_STATIC_DRAW);
+
+	glGenBuffers(1, &nbo);
+	glBindBuffer(GL_ARRAY_BUFFER, nbo);
+	glBufferData(GL_ARRAY_BUFFER, testObject.normals.size() * sizeof(glm::vec3), &testObject.normals[0], GL_STATIC_DRAW);
 
 	glBindVertexArray(0);
 
-	loadShader(shader_program, "./shaders/testhader.vert", "./shaders/testhader.frag");
+	loadShader(shader_program, "./shaders/standardmaterial.vert", "./shaders/standardmaterial.frag");
 
 	int width, height;
-	unsigned char* imageBird = SOIL_load_image("images/bird.jpg", &width, &height, 0, SOIL_LOAD_RGB);
+	unsigned char* imageBird = SOIL_load_image("images/testobject.png", &width, &height, 0, SOIL_LOAD_RGB);
 	if (imageBird == NULL) {
 		cout << "Failed loading image at line: " << __LINE__ << endl;
 		return;
@@ -312,16 +327,6 @@ void main(int argc, char **argv)
 				if (windowref->hasFocus()) {
 
 
-					glm::vec2 currentPos(windowEvent.mouseMove.x, windowEvent.mouseMove.y);
-					//cout << currentPos.x << " AND " << currentPos.y << endl;
-					//cout << mousePos.x << " AND " << mousePos.y << endl;
-					//cout << frameCount << endl;
-					glm::vec2 delta = mousePos - currentPos;
-
-					camPitch -= delta.y*sensitivity * deltaTime;
-					if (camPitch > limit) camPitch = limit;
-					if (camPitch < -limit) camPitch = -limit;
-					camYaw += delta.x * sensitivity * deltaTime;
 
 
 
@@ -332,6 +337,22 @@ void main(int argc, char **argv)
 		}
 
 		if (windowref->hasFocus()) {
+
+			glm::vec2 currentPos(sf::Mouse::getPosition(*windowref).x, sf::Mouse::getPosition(*windowref).y);
+	
+			//cout << currentPos.x << " AND " << currentPos.y << endl;
+			//cout << mousePos.x << " AND " << mousePos.y << endl;
+			//cout << frameCount << endl;
+			glm::vec2 delta = mousePos - currentPos;
+
+			camPitch -= delta.y*sensitivity * deltaTime;
+			if (camPitch > limit) camPitch = limit;
+			else if (camPitch < -limit) camPitch = -limit;
+			camYaw += delta.x * sensitivity * deltaTime;
+
+			//cout << delta.x << " AND " << delta.y << " AND " << frameCount << endl;
+
+
 			sf::Vector2u windowSize = windowref->getSize();
 			windowSize.x /= 2;
 			windowSize.y /= 2;
@@ -380,7 +401,6 @@ void main(int argc, char **argv)
 		);
 		glm::vec3 up = glm::cross(camRight, direction);
 		glm::mat4 view = glm::lookAt(
-			//sin(time) * 2.0f),
 			glm::vec3(position),
 			glm::vec3(position + direction),
 			glm::vec3(up)
@@ -388,22 +408,59 @@ void main(int argc, char **argv)
 
 		GLint uniView = glGetUniformLocation(shader_program, "view");
 		glUniformMatrix4fv(uniView, 1, GL_FALSE, glm::value_ptr(view));
-		glBindVertexArray(vao);
+		//glBindVertexArray(vao);
 
-		glm::mat4 proj = glm::perspective(glm::radians(minFov + extraFov*smoothFovScalar), (float)window_width / (float)window_height, 1.0f, 30.0f);
+		glm::mat4 proj = glm::perspective(glm::radians(minFov + extraFov*smoothFovScalar), (float)window_width / (float)window_height, 0.3f, 60.0f);
 		GLint uniProj = glGetUniformLocation(shader_program, "proj");
 		glUniformMatrix4fv(uniProj, 1, GL_FALSE, glm::value_ptr(proj));
+		
+		glEnableVertexAttribArray(0);
+		glBindBuffer(GL_ARRAY_BUFFER, vbo);
+		glVertexAttribPointer(
+			0,                  // attribute
+			3,                  // size
+			GL_FLOAT,           // type
+			GL_FALSE,           // normalized?
+			0,                  // stride
+			(void*)0            // array buffer offset
+		);
 
-		for (int i = 0; i < 10; i++) {
+		glEnableVertexAttribArray(1);
+		glBindBuffer(GL_ARRAY_BUFFER, ebo);
+		glVertexAttribPointer(
+			1,                  // attribute
+			2,                  // size
+			GL_FLOAT,           // type
+			GL_FALSE,           // normalized?
+			0,                  // stride
+			(void*)0            // array buffer offset
+		);
+		glEnableVertexAttribArray(2);
+		glBindBuffer(GL_ARRAY_BUFFER, nbo);
+		glVertexAttribPointer(
+			2,                  // attribute
+			3,                  // size
+			GL_FLOAT,           // type
+			GL_FALSE,           // normalized?
+			0,                  // stride
+			(void*)0            // array buffer offset
+		);
+
+		for (int i = 0; i < 90; i++) {
 			glm::mat4 trans;
-			trans = glm::rotate(trans, glm::radians(10.0f) + i, glm::vec3(0.0f, 0.0f, 1.0f));
-			trans = glm::translate(trans, glm::vec3(i - 5, i * 112 % 5, (i * 13 % 5) * 2 - 2.5));
+			trans = glm::rotate(trans, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+			trans = glm::rotate(trans, (float)i     , glm::vec3(0.0f, 1.0f, 0.0f));
+			trans = glm::translate(trans, glm::vec3(((i - 5 )*233)% 5, (i * 112) % 5, (i * 13 % 5) * 2 - 5));
 			GLint uniTrans = glGetUniformLocation(shader_program, "trans");
 			glUniformMatrix4fv(uniTrans, 1, GL_FALSE, glm::value_ptr(trans));
-			glDrawArrays(GL_TRIANGLES, 0, 36);
+			glDrawArrays(GL_TRIANGLES, 0, testObject.vertices.size());
 		}
 		frameCount++;
 		window.display();
+
+		glDisableVertexAttribArray(0);
+		glDisableVertexAttribArray(1);
+		glDisableVertexAttribArray(2);
 	}
 
 	glDeleteTextures(1, &texture);

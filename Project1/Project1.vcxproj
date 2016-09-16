@@ -130,18 +130,25 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="3dObject.cpp" />
+    <ClCompile Include="geometry.cpp" />
     <ClCompile Include="logging.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="objLoader.cpp" />
     <ClCompile Include="ShaderLoader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-    <None Include="Shaders\blackstar.frag" />
+    <None Include="shaders\blackstar.frag" />
+    <None Include="shaders\standardmaterial.frag" />
+    <None Include="shaders\standardmaterial.vert" />
     <None Include="shaders\testhader.frag" />
     <None Include="shaders\testhader.vert" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="geometry.h" />
     <ClInclude Include="logging.h" />
+    <ClInclude Include="objLoader.h" />
     <ClInclude Include="ShaderLoader.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

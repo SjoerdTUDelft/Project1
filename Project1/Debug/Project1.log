@@ -1,9 +1,9 @@
 ﻿  main.cpp
-c:\users\gebruiker\dropbox\project1\project1\main.cpp(50): warning C4305: 'initializing': truncation from 'double' to 'float'
-c:\users\gebruiker\dropbox\project1\project1\main.cpp(51): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-c:\users\gebruiker\dropbox\project1\project1\main.cpp(51): warning C4244: 'initializing': conversion from 'double' to 'const float', possible loss of data
-c:\users\gebruiker\dropbox\project1\project1\main.cpp(339): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
-c:\users\gebruiker\dropbox\project1\project1\main.cpp(340): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
-c:\users\gebruiker\dropbox\project1\project1\main.cpp(364): warning C4244: 'argument': conversion from 'double' to 'GLfloat', possible loss of data
+c:\users\gebruiker\dropbox\project1\project1\main.cpp(47): warning C4305: 'initializing': truncation from 'double' to 'float'
+c:\users\gebruiker\dropbox\project1\project1\main.cpp(48): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+c:\users\gebruiker\dropbox\project1\project1\main.cpp(48): warning C4244: 'initializing': conversion from 'double' to 'const float', possible loss of data
+c:\users\gebruiker\dropbox\project1\project1\main.cpp(360): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
+c:\users\gebruiker\dropbox\project1\project1\main.cpp(361): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
+c:\users\gebruiker\dropbox\project1\project1\main.cpp(385): warning C4244: 'argument': conversion from 'double' to 'GLfloat', possible loss of data
   Project1.vcxproj -> C:\Users\Gebruiker\Dropbox\Project1\Debug\Project1.exe
   Project1.vcxproj -> C:\Users\Gebruiker\Dropbox\Project1\Debug\Project1.pdb (Partial PDB)
