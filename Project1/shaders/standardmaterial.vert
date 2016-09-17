@@ -1,20 +1,27 @@
 #version 400
-uniform float triangleColor;
-uniform mat4 trans;
-uniform mat4 view;
-uniform mat4 proj;
-
+uniform float Time;
+uniform mat4 M;
+uniform mat4 V;
+uniform mat4 P;
+uniform mat3 N;
+uniform float B;
 layout (location = 0) in vec3 vp;
 layout (location = 1) in vec2 tc;
 layout (location = 2) in vec3 norm;
 
-out vec3 position;
+ 
 out vec2 texCoord;
-out vec3 worldNormals;
+out vec3 viewNormals;
+out vec3 viewPosition;
 
 void main () {
-	position = vp;
+ 
+	viewPosition = (V * M * vec4(vp,1.0)).xyz;
 	texCoord = tc;
-	worldNormals = norm;
-	gl_Position =   proj * view  * trans * vec4 (vp , 1.0);
+//	if(B >0.5) {
+//		viewNormals =  (V*M * vec4(norm,0.0)).xyz;
+//	} else {
+		viewNormals =  N * norm;
+//	}
+	gl_Position = P * V  * M * vec4 (vp , 1.0);
 }

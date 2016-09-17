@@ -22,8 +22,8 @@ using namespace std;
  //  define the window position on screen
 int window_x;
 int window_y;
-int window_width = 680;
-int window_height = 680;
+int window_width = 960;
+int window_height = 540;
 sf::Window * windowref;
 char *window_title = "Sample OpenGL FreeGlut App";
 char * GL_LOG_FILE = "apple.txt";
@@ -42,7 +42,7 @@ GLuint texture2;
 
 glm::vec3 position(0.0f,0.0f,0.0f);
 glm::vec3 direction(0.0f, 0.0f, 0.0f);
-glm::vec3 camRight(0.0f, 0.0f, 0.0f);
+glm::vec3 camLeft(0.0f, 0.0f, 0.0f);
 glm::vec2 mousePos( -1.0f, -1.0f);
 const float sensitivity = 0.2;
 const float limit = 0.6* M_PI / 2.0f;
@@ -52,7 +52,7 @@ float camYaw = 0;
 const float minSpeed = 8.0;
 const float maxSpeed = 16.0;
 float speed = minSpeed;
-const float extraFov = 50;
+const float extraFov = 60;
 const float minFov = 35;
 float fovScalar = 1;
 float smoothFovScalar = 1;
@@ -61,7 +61,7 @@ chrono::time_point<chrono::steady_clock> t_start;
 chrono::time_point<chrono::steady_clock> t_now;
 
 bool msaa = false;
-
+int lightType = 0;
  
 void processKeys() {
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape)) {
@@ -69,10 +69,10 @@ void processKeys() {
 		exit(0);
 	}
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) {
-		position -= camRight * deltaTime * speed;
+		position += camLeft * deltaTime * speed;
 	}
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {
-		position += camRight * deltaTime * speed;
+		position -= camLeft * deltaTime * speed;
 	}
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
 		position += direction * deltaTime * speed;
@@ -81,9 +81,12 @@ void processKeys() {
 		position -= direction * deltaTime * speed;
 	}
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space)) {
-		position += glm::vec3(0.0,0.0,-1.0) * deltaTime * speed;
+		position += glm::vec3(0.0,0.0, 1.0) * deltaTime * speed;
 	}
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
+		fovScalar -= deltaTime * 3;
+		if (fovScalar < 0) fovScalar = 0;
+		smoothFovScalar = glm::smoothstep(0.0f, 1.0f, fovScalar);
 		speed = maxSpeed;
 	} else {
 		speed = minSpeed;
@@ -111,7 +114,7 @@ void _update_fps_counter() {
 	static double elapsed_seconds;
 	elapsed_seconds += elapsedTime;
 
-	if (elapsed_seconds > 150.0) {
+	if (elapsed_seconds > 500.0) {
 		double fps = (double)frame_count / (elapsed_seconds / 1000.0);
 		char tmp[32];
 		sprintf(tmp, "opengl @ fps: %3.2f", fps);
@@ -148,9 +151,9 @@ void main(int argc, char **argv)
 	restart_gl_log();
 
 
-	//glEnable(GL_CULL_FACE); // cull face
-	//glCullFace(GL_BACK); // cull back face
-	//glFrontFace(GL_CW); // GL_CCW for counter clock-wise
+	glEnable(GL_CULL_FACE); // cull face
+	glCullFace(GL_BACK); // cull back face
+	glFrontFace(GL_CCW); // GL_CCW for counter clock-wise
 	glClearColor(0.0, 0.0, 1.0, 0.0);
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
@@ -207,18 +210,18 @@ void main(int argc, char **argv)
 		1, 2, 3    // Second Triangle
 	};
 
+
+
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);
-
-	
+	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+	//glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
 
 	/*
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(points), points, GL_STATIC_DRAW);
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)0);
 	glEnableVertexAttribArray(0);
@@ -289,13 +292,33 @@ void main(int argc, char **argv)
 	glBindTexture(GL_TEXTURE_2D, texture2);
 	glUniform1i(glGetUniformLocation(shader_program, "ourTexture2"), 1);
 
+
+	//glUniform1f(glGetUniformLocation(shader_program, "spotLights[0].intensity"), .20f);
+	//glUniform1f(glGetUniformLocation(shader_program, "spotLights[0].outerAngle"), 30.0f);
+	//glUniform1f(glGetUniformLocation(shader_program, "spotLights[0].innerAngle"), 25.0f);
+	//glUniform3f(glGetUniformLocation(shader_program, "spotLights[0].direction"), 0.0f, 0.0, 1.0);
+
+	glUniform1f(glGetUniformLocation(shader_program, "directionalLights[0].intensity"), .20f);
+	glUniform3f(glGetUniformLocation(shader_program, "directionalLights[0].direction"), -1.0f, -1.0, -1.0);
+
+	glUniform1f(glGetUniformLocation(shader_program, "pointLights[0].intensity"), 2.0f);
+
+
+
+	 
 	t_start_app = chrono::high_resolution_clock::now();
 
 	bool running = true;
 	int frameCount = 0;
 	while (running) {
-		sf::Event windowEvent;
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		if (msaa) {
+			//glEnable(GL_MULTISAMPLE_ARB);
+		} else {
+			//glDisable(GL_MULTISAMPLE_ARB);
+		}
 
+		sf::Event windowEvent;
 		while (window.pollEvent(windowEvent))
 		{
 			switch (windowEvent.type)
@@ -310,6 +333,8 @@ void main(int argc, char **argv)
 				switch (windowEvent.mouseButton.button) {
 				case sf::Mouse::Left:
 					msaa = !msaa;
+					lightType++;
+						if (lightType > 2) lightType = 0;
 					cout << "MSAA is " << (msaa ? "True" : "False") << endl;
 					break;
 				case sf::Mouse::Middle:
@@ -335,7 +360,6 @@ void main(int argc, char **argv)
 				break;
 			}
 		}
-
 		if (windowref->hasFocus()) {
 
 			glm::vec2 currentPos(sf::Mouse::getPosition(*windowref).x, sf::Mouse::getPosition(*windowref).y);
@@ -345,10 +369,10 @@ void main(int argc, char **argv)
 			//cout << frameCount << endl;
 			glm::vec2 delta = mousePos - currentPos;
 
-			camPitch -= delta.y*sensitivity * deltaTime;
+			camPitch += delta.y*sensitivity * deltaTime;
 			if (camPitch > limit) camPitch = limit;
 			else if (camPitch < -limit) camPitch = -limit;
-			camYaw += delta.x * sensitivity * deltaTime;
+			camYaw -= delta.x * sensitivity * deltaTime;
 
 			//cout << delta.x << " AND " << delta.y << " AND " << frameCount << endl;
 
@@ -360,29 +384,36 @@ void main(int argc, char **argv)
 			mousePos.x = sf::Mouse::getPosition(*windowref).x;
 			mousePos.y = sf::Mouse::getPosition(*windowref).y;
 		}
-
 		processKeys();
 
 		t_now = chrono::high_resolution_clock::now();
 		deltaTime = chrono::duration<float>(t_now - t_start).count();
-		if (deltaTime > 1.0)deltaTime = 1.0;
 		t_start = chrono::high_resolution_clock::now();
-
 		_update_fps_counter();
 
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		if (msaa) {
-			glEnable(GL_MULTISAMPLE_ARB);
-		} else {
-			glDisable(GL_MULTISAMPLE_ARB);
+		
+		double time = chrono::duration<double>(t_now - t_start_app).count();
+		time = (sin(time) / 2.0 + 0.5) * 6 + 1;
+
+		GLuint uniColor = glGetUniformLocation(shader_program, "Time");
+		glUniform1f(uniColor, time);
+		GLuint scalartest = glGetUniformLocation(shader_program, "fov");
+		glUniform1f(scalartest, fovScalar);
+		glUniform3f(glGetUniformLocation(shader_program, "pointLights[0].position"), 0.0f, 0.0, time);
+
+		GLint ayy = glGetUniformLocation(shader_program, "B");
+		if (lightType == 0) {
+			glUniform1f(ayy, 1.0);
+		}
+		else if (lightType == 1) {
+			glUniform1f(ayy, .7);
+		}
+		else if (lightType == 2) {
+
+			glUniform1f(ayy, .3);
 		}
 
 
-		auto now = chrono::high_resolution_clock::now();
-		double time = chrono::duration<double>(now - t_start_app).count();
-
-		GLuint uniColor = glGetUniformLocation(shader_program, "triangleColor");
-		glUniform1f(uniColor, (sin(time * 4.0f) / 2.0 + 0.5));
 		GLenum err = glGetError();
 		if (err != 0) {
 			cout << err << endl;
@@ -393,25 +424,24 @@ void main(int argc, char **argv)
 			cos(camPitch) * cos(camYaw),
 			sin(camPitch)
 		);
-		camRight = glm::vec3(
+		camLeft = glm::vec3(
 			sin(camYaw - 3.14f / 2.0f),
 			cos(camYaw - 3.14f / 2.0f),
 			0.0f
 
 		);
-		glm::vec3 up = glm::cross(camRight, direction);
-		glm::mat4 view = glm::lookAt(
+		glm::vec3 up = glm::cross(direction, camLeft);
+		glm::mat4 V = glm::lookAt(
 			glm::vec3(position),
 			glm::vec3(position + direction),
 			glm::vec3(up)
 		);
 
-		GLint uniView = glGetUniformLocation(shader_program, "view");
-		glUniformMatrix4fv(uniView, 1, GL_FALSE, glm::value_ptr(view));
-		//glBindVertexArray(vao);
+		GLint uniView = glGetUniformLocation(shader_program, "V");
+		glUniformMatrix4fv(uniView, 1, GL_FALSE, glm::value_ptr(V));
 
 		glm::mat4 proj = glm::perspective(glm::radians(minFov + extraFov*smoothFovScalar), (float)window_width / (float)window_height, 0.3f, 60.0f);
-		GLint uniProj = glGetUniformLocation(shader_program, "proj");
+		GLint uniProj = glGetUniformLocation(shader_program, "P");
 		glUniformMatrix4fv(uniProj, 1, GL_FALSE, glm::value_ptr(proj));
 		
 		glEnableVertexAttribArray(0);
@@ -445,16 +475,41 @@ void main(int argc, char **argv)
 			0,                  // stride
 			(void*)0            // array buffer offset
 		);
+		
+		for (int i = 0; i < 60; i++) {
+			glm::mat4 M;
+			M = glm::translate(M, glm::vec3(cos(M_PI *2.0*((float)i / 20)) * 7,
+				sin(M_PI *2.0*((float)i / 20)) * 7,
+				floor((float)i / 20) * 4  ));
 
-		for (int i = 0; i < 90; i++) {
-			glm::mat4 trans;
-			trans = glm::rotate(trans, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-			trans = glm::rotate(trans, (float)i     , glm::vec3(0.0f, 1.0f, 0.0f));
-			trans = glm::translate(trans, glm::vec3(((i - 5 )*233)% 5, (i * 112) % 5, (i * 13 % 5) * 2 - 5));
-			GLint uniTrans = glGetUniformLocation(shader_program, "trans");
-			glUniformMatrix4fv(uniTrans, 1, GL_FALSE, glm::value_ptr(trans));
+			M = glm::rotate(M, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+			M = glm::rotate(M, (float)(-0.5 *M_PI + M_PI *2.0 * (float)i / 20), glm::vec3(0.0f, 1.0f, 0.0f));
+
+			GLint uniM = glGetUniformLocation(shader_program, "M");
+			glUniformMatrix4fv(uniM, 1, GL_FALSE, glm::value_ptr(M));
+
+			glm::mat3 N(V*M);
+			N = glm::inverse(N);
+			GLint uniN = glGetUniformLocation(shader_program, "N");
+			glUniformMatrix3fv(uniN, 1, GL_TRUE, glm::value_ptr(N));
+
 			glDrawArrays(GL_TRIANGLES, 0, testObject.vertices.size());
 		}
+		glm::mat4 M;
+		M = glm::translate(M, glm::vec3(0.0f, 0.0f, (float)time));
+		M = glm::rotate(M, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		
+		GLint uniM = glGetUniformLocation(shader_program, "M");
+		glUniformMatrix4fv(uniM, 1, GL_FALSE, glm::value_ptr(M));
+
+		glm::mat3 N(V*M);
+		N = glm::inverse(N);
+		GLint uniN = glGetUniformLocation(shader_program, "N");
+		glUniformMatrix3fv(uniN, 1, GL_TRUE, glm::value_ptr(N));
+
+		glDrawArrays(GL_TRIANGLES, 0, testObject.vertices.size());
+
+
 		frameCount++;
 		window.display();
 
