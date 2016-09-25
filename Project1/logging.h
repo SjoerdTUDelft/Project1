@@ -2,6 +2,7 @@
 
 #ifdef _DEBUG
 #include <iostream>
+#include <string.h>
 #define MY_PRINT(x) do{ std::cout << #x"=" << x << "\nAt Line: " << __LINE__ << "\nIn File: " << __FILE__ << std::endl; gl_log_err(#x);}while(0)
 #endif
 

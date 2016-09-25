@@ -1,14 +1,13 @@
 #version 400
-uniform float Time;
 uniform mat4 M;
 uniform mat4 V;
 uniform mat4 P;
 uniform mat3 N;
-uniform float B;
-layout (location = 0) in vec3 vp;
-layout (location = 1) in vec2 tc;
-layout (location = 2) in vec3 norm;
+//uniform float B;
 
+layout (location = 0) in vec3 vp;
+layout (location = 1) in vec3 norm;
+layout (location = 2) in vec2 tc;
  
 out vec2 texCoord;
 out vec3 viewNormals;

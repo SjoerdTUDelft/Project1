@@ -1,12 +1,17 @@
 ﻿  main.cpp
-c:\users\gebruiker\dropbox\project1\project1\main.cpp(47): warning C4305: 'initializing': truncation from 'double' to 'float'
-c:\users\gebruiker\dropbox\project1\project1\main.cpp(48): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-c:\users\gebruiker\dropbox\project1\project1\main.cpp(48): warning C4244: 'initializing': conversion from 'double' to 'const float', possible loss of data
-c:\users\gebruiker\dropbox\project1\project1\main.cpp(384): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
-c:\users\gebruiker\dropbox\project1\project1\main.cpp(385): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
-c:\users\gebruiker\dropbox\project1\project1\main.cpp(399): warning C4244: 'argument': conversion from 'double' to 'GLfloat', possible loss of data
-c:\users\gebruiker\dropbox\project1\project1\main.cpp(402): warning C4244: 'argument': conversion from 'double' to 'GLfloat', possible loss of data
-c:\users\gebruiker\dropbox\project1\project1\main.cpp(409): warning C4305: 'argument': truncation from 'double' to 'GLfloat'
-c:\users\gebruiker\dropbox\project1\project1\main.cpp(413): warning C4305: 'argument': truncation from 'double' to 'GLfloat'
+c:\users\gebruiker\dropbox\project1\project1\objloader.h(10): warning C4067: unexpected tokens following preprocessor directive - expected a newline
+c:\users\gebruiker\dropbox\project1\project1\main.cpp(51): warning C4305: 'initializing': truncation from 'double' to 'float'
+c:\users\gebruiker\dropbox\project1\project1\main.cpp(52): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+c:\users\gebruiker\dropbox\project1\project1\main.cpp(52): warning C4244: 'initializing': conversion from 'double' to 'const float', possible loss of data
+c:\users\gebruiker\dropbox\project1\project1\main.cpp(122): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+c:\users\gebruiker\dropbox\project1\project1\main.cpp(123): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+c:\users\gebruiker\dropbox\project1\project1\main.cpp(315): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
+c:\users\gebruiker\dropbox\project1\project1\main.cpp(316): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
+c:\users\gebruiker\dropbox\project1\project1\main.cpp(414): warning C4244: 'argument': conversion from 'double' to 'GLfloat', possible loss of data
+c:\users\gebruiker\dropbox\project1\project1\main.cpp(416): warning C4244: 'argument': conversion from 'double' to 'GLfloat', possible loss of data
+c:\users\gebruiker\dropbox\project1\project1\main.cpp(476): warning C4244: 'argument': conversion from 'double' to 'GLfloat', possible loss of data
+c:\users\gebruiker\dropbox\project1\project1\main.cpp(478): warning C4244: 'argument': conversion from 'double' to 'GLfloat', possible loss of data
+c:\users\gebruiker\dropbox\project1\project1\main.cpp(565): warning C4244: 'argument': conversion from 'double' to 'GLfloat', possible loss of data
+c:\users\gebruiker\dropbox\project1\project1\main.cpp(567): warning C4244: 'argument': conversion from 'double' to 'GLfloat', possible loss of data
   Project1.vcxproj -> C:\Users\Gebruiker\Dropbox\Project1\Debug\Project1.exe
   Project1.vcxproj -> C:\Users\Gebruiker\Dropbox\Project1\Debug\Project1.pdb (Partial PDB)

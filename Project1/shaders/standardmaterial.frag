@@ -75,7 +75,9 @@ vec3 PBR(vec3 vCamera, vec3 vLight, vec3 vNorm, float roughness) {
 void main () {
 
 	//Standard Variables
-	float roughness = fov * 0.8 + 0.1;
+	float roughness = fov * 0.6 + 0.1;
+	//float roughness = clamp(1.5- texture2D(ourTexture1,texCoord).a,0.0,1.0);
+	
 	vec3 vNorm = normalize(viewNormals);
 	vec3 vCamera = normalize(-viewPosition);
 	vec3 Diffuse = texture2D(ourTexture1,texCoord).xyz;	
@@ -84,7 +86,7 @@ void main () {
 	
 	for(int i = 0; i < POINTLIGHTS; i++) {
 		//Direction of Light
-		vec3 relative =   (V * vec4(pointLights[i].position ,0.0)).xyz - viewPosition;
+		vec3 relative =   (V * vec4(pointLights[i].position ,1.0)).xyz - viewPosition;
 		vec3 vLight = normalize(relative);
 
 		//Distance for Intensity of light
@@ -132,5 +134,10 @@ void main () {
 
 	//Compositing
 	//vec3 endcol = vec3(( Diffuse + GGX*Schlick*Vis_Smith)*distance*LoN* lightStrength);
+	//if(B> 0.5) {
+	//frag_colour = vec4(endcol*texture2D(ourTexture1,texCoord).a,1.0);
+	//}else  {
 	frag_colour = vec4(endcol,1.0);
+
+	//}
 }

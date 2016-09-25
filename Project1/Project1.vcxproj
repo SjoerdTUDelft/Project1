@@ -130,7 +130,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="3dObject.cpp" />
+    <ClCompile Include="geometry\square.cpp" />
+    <ClCompile Include="x64\3dObject.cpp" />
     <ClCompile Include="geometry.cpp" />
     <ClCompile Include="logging.cpp" />
     <ClCompile Include="main.cpp" />
@@ -138,18 +139,29 @@
     <ClCompile Include="ShaderLoader.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="ClassDiagram.cd" />
     <None Include="packages.config" />
+    <None Include="shaders\basic.frag" />
+    <None Include="shaders\basic.vert" />
     <None Include="shaders\blackstar.frag" />
+    <None Include="shaders\postprocess.frag" />
+    <None Include="shaders\postprocess.vert" />
+    <None Include="shaders\skybox.frag" />
+    <None Include="shaders\skybox.vert" />
     <None Include="shaders\standardmaterial.frag" />
     <None Include="shaders\standardmaterial.vert" />
-    <None Include="shaders\testhader.frag" />
-    <None Include="shaders\testhader.vert" />
+    <None Include="shaders\testshader.frag" />
+    <None Include="shaders\testshader.vert" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="geometry.h" />
+    <ClInclude Include="frameBuffer.h" />
     <ClInclude Include="logging.h" />
     <ClInclude Include="objLoader.h" />
     <ClInclude Include="ShaderLoader.h" />
+    <ClInclude Include="skyboxGeometry.h" />
+    <ClInclude Include="squareGeometry.h" />
+    <ClInclude Include="texture.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -17,6 +17,9 @@
       <UniqueIdentifier>{58f554c8-25fd-42fc-bcb1-735e25228ded}</UniqueIdentifier>
       <Extensions>vert;frag;</Extensions>
     </Filter>
+    <Filter Include="Source Files\geometry">
+      <UniqueIdentifier>{258ff2ae-3a3c-4fd4-a237-5c6ea87ce493}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -31,11 +34,14 @@
     <ClCompile Include="objLoader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="3dObject.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="geometry.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="x64\3dObject.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="geometry\square.cpp">
+      <Filter>Source Files\geometry</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -43,16 +49,35 @@
     <None Include="shaders\standardmaterial.frag">
       <Filter>shaders</Filter>
     </None>
-    <None Include="shaders\testhader.frag">
-      <Filter>shaders</Filter>
-    </None>
-    <None Include="shaders\testhader.vert">
-      <Filter>shaders</Filter>
-    </None>
     <None Include="shaders\blackstar.frag">
       <Filter>shaders</Filter>
     </None>
     <None Include="shaders\standardmaterial.vert">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\testshader.frag">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\testshader.vert">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\postprocess.frag">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\postprocess.vert">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="ClassDiagram.cd" />
+    <None Include="shaders\skybox.frag">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\skybox.vert">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\basic.frag">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\basic.vert">
       <Filter>shaders</Filter>
     </None>
   </ItemGroup>
@@ -67,6 +92,18 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="geometry.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="squareGeometry.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="frameBuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="texture.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="skyboxGeometry.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
