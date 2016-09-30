@@ -71,7 +71,7 @@ bool bCheckShaderCompile(GLuint shader) {
 		glGetShaderInfoLog(shader, maxLength, &maxLength, &errorLog[0]);
 
 		gl_log_err(errorLog);
-
+ 
 		// Provide the infolog in whatever manor you deem best.
 		// Exit with failure.
 		glDeleteShader(shader); // Don't leak the shader.
@@ -97,11 +97,13 @@ GLint loadShader(GLuint &shader, const char * const pathVertex, const char * con
 	glCompileShader(shader_vertex);
 	if (bCheckShaderCompile(shader_vertex) == 0) {
 		cout << "Error loading vertexshader at FILE: " << __FILE__ << "\nAnd Line: " << __LINE__ << endl;
+		cout << pathVertex << endl;
 		exit(-1);
 	}
 	glCompileShader(shader_fragment);
 	if (bCheckShaderCompile(shader_fragment) == 0) {
 		cout << "Error loading fragmentshader at FILE: " << __FILE__ << "\nAnd Line: "<< __LINE__ << endl;
+		cout << pathFragment << endl;
 		exit(-1);
 	}
 	shader = glCreateProgram();

@@ -1,5 +1,6 @@
+#include <Windows.h>
+#include <SFML/Window.hpp>
 #include <GL/glew.h>
-#include <gl/freeglut.h>
 
 #include <iostream>
 #include <chrono>
@@ -8,8 +9,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-
-#include <SFML/Window.hpp>
+#include <glm/gtc/matrix_access.hpp>
 
 #include "logging.h"
 #include "objLoader.h"
@@ -36,7 +36,16 @@ LARGE_INTEGER frequency;        // ticks per second
 LARGE_INTEGER t1, t2;           // ticks
 double elapsedTime;
 
+const int amount = 1000;
+glm::mat4 modelMatrices[amount];
+glm::mat3 normalMatrices[amount];
+glm::mat4 * pP;
+glm::mat4 * pV;
+geometry * pRenderObject;
+skyboxGeometry * pSkyBox;
 FrameBuffer * Buffer;
+
+double globalTime = 0;
 
 GLuint shader_program;
 GLuint shader_intOutline;
@@ -67,6 +76,56 @@ chrono::time_point<chrono::steady_clock> t_now;
 bool msaa = false;
 int lightType = 0;
  
+void RenderFrame() {
+	//ENABLE STENCIL AND DEPTH TEST
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_STENCIL_TEST);
+	glStencilFunc(GL_ALWAYS, 1, 0xFF);
+	glStencilMask(0xFF);
+	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+	glPolygonMode(GL_FRONT, GL_FILL);
+
+	//SET STANDARD MATERIAL
+	glUseProgram(shader_program);
+	glUniform1i(glGetUniformLocation(shader_program, "ourTexture1"), 0);
+	glUniform1f(glGetUniformLocation(shader_program, "Time"), globalTime);
+	glUniform1f(glGetUniformLocation(shader_program, "fov"), fovScalar);
+	glUniform3f(glGetUniformLocation(shader_program, "pointLights[0].position"), 0.0f, 0.0, globalTime);
+
+	//RENDER INSTANCES STANDARD
+	glBindVertexArray(pRenderObject->buffVertex);
+	glDrawElementsInstanced(
+		pRenderObject->DrawMethod, pRenderObject->indices.size(), GL_UNSIGNED_INT, 0, amount
+	);
+	glBindVertexArray(0);
+
+	//SET LINERENDERING
+	glDisable(GL_DEPTH_TEST);
+	glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+	glLineWidth(3);
+	glPolygonMode(GL_FRONT, GL_LINE);
+
+	//SET OUTLINE MATERIAL
+	glUseProgram(shader_intOutline);
+
+	//RENDER INSTANCES OUTLINE
+	glBindVertexArray(pRenderObject->buffVertex);
+	glDrawElementsInstanced(
+		pRenderObject->DrawMethod, pRenderObject->indices.size(), GL_UNSIGNED_INT, 0, amount
+	);
+	glBindVertexArray(0);
+
+	//SKYBOX
+	glPolygonMode(GL_FRONT, GL_FILL);
+	glUseProgram(shader_skyBox);
+	glUniform1i(glGetUniformLocation(shader_skyBox, "skybox"), 1);
+	glm::mat4 view = glm::mat4(glm::mat3(*pV));
+	glUniformMatrix4fv(glGetUniformLocation(shader_skyBox, "V"), 1, GL_FALSE, glm::value_ptr(view));
+	glUniformMatrix4fv(glGetUniformLocation(shader_skyBox, "P"), 1, GL_FALSE, glm::value_ptr(*pP));
+	pSkyBox->DrawArray();
+
+};
+
 void processKeys() {
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape)) {
 		cout << "ESCAPE WAS PRESSED" << endl;
@@ -163,9 +222,11 @@ void main(int argc, char **argv)
 	glewInit();
 
 	//GEOMETRYLOADING
- 	geometry testObject = bloadObj("./objects/testobject.obj");
+	geometry testObject = bloadObj("./objects/testobject.obj");
+	pRenderObject = &testObject;
 	squareGeometry square;
 	skyboxGeometry skyBox;
+	pSkyBox = &skyBox;
 
 	//TEXTURELOADING
 	Texture texture;  texture.LoadTexture("images/testobject.png");
@@ -203,8 +264,8 @@ void main(int argc, char **argv)
 
 
 	//SHADERLOADING
-	loadShader(shader_program, "./shaders/standardmaterial.vert", "./shaders/standardmaterial.frag");
-	loadShader(shader_intOutline, "./shaders/standardmaterial.vert", "./shaders/testshader.frag");
+	loadShader(shader_program, "./shaders/standardmaterialInstanced.vert", "./shaders/standardmaterialInstanced.frag");
+	loadShader(shader_intOutline, "./shaders/standardmaterialInstanced.vert", "./shaders/outlinematerialInstance.frag");
 	loadShader(shader_postProcessing, "./shaders/postprocess.vert", "./shaders/postprocess.frag");
 	loadShader(shader_skyBox, "./shaders/skybox.vert", "./shaders/skybox.frag");
 	loadShader(shader_basic, "./shaders/basic.vert", "./shaders/basic.frag");
@@ -239,6 +300,52 @@ void main(int argc, char **argv)
 	glBindTexture(GL_TEXTURE_CUBE_MAP, CubeMap);
 	Portal.FrameTexture.ActivateTexture(2);
 	SceneRender.FrameTexture.ActivateTexture(3);
+
+	GLuint uboExampleBlock;
+	glGenBuffers(1, &uboExampleBlock);
+	glBindBuffer(GL_UNIFORM_BUFFER, uboExampleBlock);
+	glBufferData(GL_UNIFORM_BUFFER, 128, NULL, GL_STATIC_DRAW); // allocate 150 bytes of memory
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+	glBindBufferBase(GL_UNIFORM_BUFFER, 0, uboExampleBlock);
+
+	glm::mat4 modelMatrices[amount];
+
+	for (int i = 0; i < amount; i++) {
+		modelMatrices[i] = glm::translate(modelMatrices[i], glm::vec3(cos(M_PI *2.0*(float)i / 20) * 7,
+			floor((float)i / 20) * 2,
+			15 + sin(M_PI *2.0*(float)i / 20) * 7));
+
+		modelMatrices[i] = glm::rotate(modelMatrices[i], (float)(-0.5 *M_PI - M_PI *2.0 * (float)i / 20), glm::vec3(0.0f, 1.0f, 0.0f));
+	}
+
+	GLuint instanceMatrixModelBuffer;
+	glGenBuffers(1, &instanceMatrixModelBuffer);
+	GLuint instanceMatrixNormalBuffer;
+	glGenBuffers(1, &instanceMatrixNormalBuffer);
+	
+	glBindVertexArray(testObject.buffVertex);
+	glBindBuffer(GL_ARRAY_BUFFER, instanceMatrixModelBuffer);
+	glBufferData(GL_ARRAY_BUFFER, amount * sizeof(glm::mat4), &modelMatrices[0], GL_STATIC_DRAW);
+	GLsizei vec4Size = sizeof(glm::vec4);
+
+	glEnableVertexAttribArray(3);
+	glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (GLvoid*)0);
+	glEnableVertexAttribArray(4);
+	glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (GLvoid*)(vec4Size));
+	glEnableVertexAttribArray(5);
+	glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (GLvoid*)(2 * vec4Size));
+	glEnableVertexAttribArray(6);
+	glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (GLvoid*)(3 * vec4Size));
+
+	glVertexAttribDivisor(3, 1);
+	glVertexAttribDivisor(4, 1);
+	glVertexAttribDivisor(5, 1);
+	glVertexAttribDivisor(6, 1);
+
+	glBindVertexArray(0);
+
+
+
 
 
 	GLenum err = glGetError();
@@ -325,10 +432,11 @@ void main(int argc, char **argv)
 		processKeys();
 		_update_fps_counter();
 
+
 		
-		double time = chrono::duration<double>(t_now - t_start_app).count();
-		time = (sin(time) / 2.0 + 0.5) * 6 + 1;
-		time = 0;
+		globalTime = chrono::duration<double>(t_now - t_start_app).count();
+		globalTime = (sin(globalTime) / 2.0 + 0.5) * 6 + 1;
+		globalTime = 0;
 
 		//direction = glm::vec3(
 		//	cos(camPitch) * sin(camYaw),
@@ -357,282 +465,84 @@ void main(int argc, char **argv)
 			sin(camYaw - 3.14f / 2.0f),
 			0.0f,
 			cos(camYaw - 3.14f / 2.0f)
-
 		);
 		glm::vec3 up = glm::cross(camLeft, direction);
-		glm::mat4 V = glm::lookAt(
-			glm::vec3(position),
-			glm::vec3(position + direction),
-			glm::vec3(up)
-		);
 
- 
+		glm::mat4 V = glm::lookAt(	glm::vec3(position), glm::vec3(position + direction), glm::vec3(up));
 		glm::mat4 P = glm::perspective(glm::radians(minFov + extraFov*smoothFovScalar), (float)window_width / (float)window_height, 0.1f, 100.0f);
+		pV = &V;
+		pP = &P;
+
+		normalMatrices[amount];
+		for (int i = 0; i < amount; i++) {
+ 			normalMatrices[i] = glm::mat3(V*modelMatrices[i]);
+			normalMatrices[i] = glm::inverse(normalMatrices[i]);
+			normalMatrices[i] = glm::transpose(normalMatrices[i]);
+		}
+
+		glBindVertexArray(testObject.buffVertex);
+		glBindBuffer(GL_ARRAY_BUFFER, instanceMatrixNormalBuffer);
+		glBufferData(GL_ARRAY_BUFFER, amount * sizeof(glm::mat3), &normalMatrices[0], GL_STATIC_DRAW);
+		GLsizei vec3Size = sizeof(glm::vec3);
+
+		glEnableVertexAttribArray(7);
+		glVertexAttribPointer(7, 3, GL_FLOAT, GL_FALSE, 3 * vec3Size, (GLvoid*)0);
+		glEnableVertexAttribArray(8);
+		glVertexAttribPointer(8, 3, GL_FLOAT, GL_FALSE, 3 * vec3Size, (GLvoid*)(1 * vec3Size));
+		glEnableVertexAttribArray(9);
+		glVertexAttribPointer(9, 3, GL_FLOAT, GL_FALSE, 3 * vec3Size, (GLvoid*)(2 * vec3Size));
+
+		glVertexAttribDivisor(7, 1);
+		glVertexAttribDivisor(8, 1);
+		glVertexAttribDivisor(9, 1);
+
+		glBindVertexArray(0);
+
+		glBindBuffer(GL_UNIFORM_BUFFER, uboExampleBlock);
+		glBufferData(GL_UNIFORM_BUFFER, 128, NULL, GL_STATIC_DRAW); // allocate 128 bytes of memory
+		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(V));
+		glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(P));
+		glBindBuffer(GL_UNIFORM_BUFFER, 0);
+		
+
+		//-------------------------------------------------------------------------
+		//		Rendering
+		//-------------------------------------------------------------------------
 
 		//FRAMEBUFFER PORTAL
 		glBindFramebuffer(GL_FRAMEBUFFER, Portal.FrameBufferId);
 		glViewport(0, 0, Portal.FrameTexture.width, Portal.FrameTexture.height);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+		//RenderFrame();
 
-		//SKYBOX
-		glPolygonMode(GL_FRONT, GL_FILL);
-		glUseProgram(shader_skyBox);
-		glUniform1i(glGetUniformLocation(shader_skyBox, "skybox"), 1);
-		glm::mat4 view = glm::mat4(glm::mat3(V));
-		glUniformMatrix4fv(glGetUniformLocation(shader_skyBox, "V"), 1, GL_FALSE, glm::value_ptr(view));
-		glUniformMatrix4fv(glGetUniformLocation(shader_skyBox, "P"), 1, GL_FALSE, glm::value_ptr(P));
+		//FRAMEBUFFER FINAL FRAME
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glViewport(0, 0, window_width, window_height);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+		RenderFrame();
+
+		//RENDERING PORTAL IN FINAL FRAMEBUFFER
 		glDisable(GL_STENCIL_TEST);
-		skyBox.DrawArray();
-		glEnable(GL_STENCIL_TEST);
+		glUseProgram(shader_basic);
+		glUniform1i(glGetUniformLocation(shader_basic, "ourTexture1"), 2);
 
-
-		glUseProgram(shader_program);
-		glUniform1i(glGetUniformLocation(shader_program, "ourTexture1"), 0);
-		for (int i = 0; i < 100; i++) {
-			glPolygonMode(GL_FRONT, GL_FILL);
-			glm::mat4 M;
-			
-			M = glm::translate(M, glm::vec3(cos(M_PI *2.0*(float)i / 20) * 7,
-				floor((float)i / 20) * 2,
-				15 + sin(M_PI *2.0*(float)i / 20) * 7));
-
-			M = glm::rotate(M, (float)(-0.5 *M_PI - M_PI *2.0 * (float)i / 20), glm::vec3(0.0f, 1.0f, 0.0f));
-			glm::mat3 N(V*M);
-			N = glm::inverse(N);
-
-			glEnable(GL_DEPTH_TEST);
-
-			glStencilFunc(GL_ALWAYS, 1, 0xFF);
-			glStencilMask(0xFF);
-			glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-			glUseProgram(shader_program);
-			
-			glUniformMatrix3fv(glGetUniformLocation(shader_program, "N"), 1, GL_TRUE, glm::value_ptr(N));
-			glUniformMatrix4fv(glGetUniformLocation(shader_program, "M"), 1, GL_FALSE, glm::value_ptr(M));
-			glUniformMatrix4fv(glGetUniformLocation(shader_program, "V"), 1, GL_FALSE, glm::value_ptr(V));
-			glUniformMatrix4fv(glGetUniformLocation(shader_program, "P"), 1, GL_FALSE, glm::value_ptr(P));
-				   glUniform1f(glGetUniformLocation(shader_program, "Time") , time);
-				   glUniform1f(glGetUniformLocation(shader_program, "fov") , fovScalar);
-				   glUniform3f(glGetUniformLocation(shader_program, "pointLights[0].position"), 0.0f, 0.0, time);
-
-			testObject.DrawElements();
-			glLineWidth(3);
-			glPolygonMode(GL_FRONT, GL_LINE);
-
-			glDisable(GL_DEPTH_TEST);
-			glStencilMask(0x00);
-			glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
-	 
-			glUseProgram(shader_intOutline);
-			glUniformMatrix3fv(glGetUniformLocation(shader_intOutline, "N"), 1, GL_TRUE, glm::value_ptr(N));
-			glUniformMatrix4fv(glGetUniformLocation(shader_intOutline, "M"),  1, GL_FALSE, glm::value_ptr(M));
-			glUniformMatrix4fv(glGetUniformLocation(shader_intOutline, "V"),  1, GL_FALSE, glm::value_ptr(V));
-			glUniformMatrix4fv(glGetUniformLocation(shader_intOutline, "P"), 1, GL_FALSE, glm::value_ptr(P));
-
-			testObject.DrawElements();
-			glStencilMask(0xFF);
- 
-		}
-
-
-
-		if (msaa) {
-			glBindFramebuffer(GL_FRAMEBUFFER, SceneRender.RenderBufferId);
-			glViewport(0, 0, window_width, window_height);
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
-			glPolygonMode(GL_FRONT, GL_FILL);
-			glUseProgram(shader_skyBox);
-			glUniform1i(glGetUniformLocation(shader_skyBox, "skybox"), 1);
-			glm::mat4 view = glm::mat4(glm::mat3(V));
-			glUniformMatrix4fv(glGetUniformLocation(shader_skyBox, "V"), 1, GL_FALSE, glm::value_ptr(view));
-			glUniformMatrix4fv(glGetUniformLocation(shader_skyBox, "P"), 1, GL_FALSE, glm::value_ptr(P));
-			glDisable(GL_STENCIL_TEST);
-			skyBox.DrawArray();
-			glEnable(GL_STENCIL_TEST);
-
-			for (int i = 0; i < 100; i++) {
-				glPolygonMode(GL_FRONT, GL_FILL);
-				glm::mat4 M;
-
-				M = glm::translate(M, glm::vec3(cos(M_PI *2.0*(float)i / 20) * 7,
-					floor((float)i / 20) * 2,
-					15 + sin(M_PI *2.0*(float)i / 20) * 7));
-
-				M = glm::rotate(M, (float)(-0.5 *M_PI - M_PI *2.0 * (float)i / 20), glm::vec3(0.0f, 1.0f, 0.0f));
-				glm::mat3 N(V*M);
-				N = glm::inverse(N);
-
-				glEnable(GL_DEPTH_TEST);
-				glStencilFunc(GL_ALWAYS, 1, 0xFF);
-				glStencilMask(0xFF);
-				glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-				glUseProgram(shader_program);
-
-				glUniformMatrix3fv(glGetUniformLocation(shader_program, "N"), 1, GL_TRUE, glm::value_ptr(N));
-				glUniformMatrix4fv(glGetUniformLocation(shader_program, "M"), 1, GL_FALSE, glm::value_ptr(M));
-				glUniformMatrix4fv(glGetUniformLocation(shader_program, "V"), 1, GL_FALSE, glm::value_ptr(V));
-				glUniformMatrix4fv(glGetUniformLocation(shader_program, "P"), 1, GL_FALSE, glm::value_ptr(P));
-				glUniform1f(glGetUniformLocation(shader_program, "Time"), time);
-				glUniform1f(glGetUniformLocation(shader_program, "fov"), fovScalar);
-				glUniform3f(glGetUniformLocation(shader_program, "pointLights[0].position"), 0.0f, 0.0, time);
-
-				testObject.DrawElements();
-				glLineWidth(3);
-				glPolygonMode(GL_FRONT, GL_LINE);
-
-				glDisable(GL_DEPTH_TEST);
-				glStencilMask(0x00);
-				glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
-
-				glUseProgram(shader_intOutline);
-				glUniformMatrix3fv(glGetUniformLocation(shader_intOutline, "N"), 1, GL_TRUE, glm::value_ptr(N));
-				glUniformMatrix4fv(glGetUniformLocation(shader_intOutline, "M"), 1, GL_FALSE, glm::value_ptr(M));
-				glUniformMatrix4fv(glGetUniformLocation(shader_intOutline, "V"), 1, GL_FALSE, glm::value_ptr(V));
-				glUniformMatrix4fv(glGetUniformLocation(shader_intOutline, "P"), 1, GL_FALSE, glm::value_ptr(P));
-
-				testObject.DrawElements();
-				glStencilMask(0xFF);
-
-			}
-			glDisable(GL_STENCIL_TEST);
-			glEnable(GL_DEPTH_TEST);
-			glPolygonMode(GL_FRONT, GL_FILL);
-
-
-			glUseProgram(shader_basic);
-			glUniform1i(glGetUniformLocation(shader_basic, "ourTexture1"), 2);
-
-			glm::mat4 M;
-			float imagescale = 6.0;
-
-			M = glm::rotate(M, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-			M = glm::scale(M, glm::vec3(imagescale,
-				imagescale*((float)window_height / window_width),
-				1.0));
-
-			glUniformMatrix4fv(glGetUniformLocation(shader_basic, "M"), 1, GL_FALSE, glm::value_ptr(M));
-			glUniformMatrix4fv(glGetUniformLocation(shader_basic, "V"), 1, GL_FALSE, glm::value_ptr(V));
-			glUniformMatrix4fv(glGetUniformLocation(shader_basic, "P"), 1, GL_FALSE, glm::value_ptr(P));
-
-			square.DrawElements();
-			
-
-			glBindFramebuffer(GL_FRAMEBUFFER, 0);
-			glClearColor(1.0, 0.0, 0.0, 0.0);
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-			glUseProgram(shader_postProcessing);
-			glUniform1i(glGetUniformLocation(shader_postProcessing, "ourTexture1"), 3);
-
-
-			glDisable(GL_DEPTH_TEST);
-
-			square.DrawElements();
-
-			glClearColor(0.0, 0.0, 1.0, 0.0);
-		}
-		else {
-			glBindFramebuffer(GL_FRAMEBUFFER, 0);
-			glClearColor(0.0, 0.0, 1.0, 0.0);
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-			glViewport(0, 0, window_width, window_height);
-
-			glEnable(GL_STENCIL_TEST);
-
-
-			for (int i = 0; i < 100; i++) {
-				glPolygonMode(GL_FRONT, GL_FILL);
-				glm::mat4 M;
-
-				M = glm::translate(M, glm::vec3(cos(M_PI *2.0*(float)i / 20) * 7,
-												floor((float)i / 20) * 2,
-												15 + sin(M_PI *2.0*(float)i / 20) * 7));
-
-				M = glm::rotate(M, (float)(-0.5 *M_PI - M_PI *2.0 * (float)i / 20), glm::vec3(0.0f, 1.0f, 0.0f));
-				glm::mat3 N(V*M);
-				N = glm::inverse(N);
-
-				glEnable(GL_DEPTH_TEST);
-				glStencilFunc(GL_ALWAYS, 1, 0xFF);
-				glStencilMask(0xFF);
-				glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-				glUseProgram(shader_program);
-
-				glUniformMatrix3fv(glGetUniformLocation(shader_program, "N"), 1, GL_TRUE, glm::value_ptr(N));
-				glUniformMatrix4fv(glGetUniformLocation(shader_program, "M"), 1, GL_FALSE, glm::value_ptr(M));
-				glUniformMatrix4fv(glGetUniformLocation(shader_program, "V"), 1, GL_FALSE, glm::value_ptr(V));
-				glUniformMatrix4fv(glGetUniformLocation(shader_program, "P"), 1, GL_FALSE, glm::value_ptr(P));
-				glUniform1f(glGetUniformLocation(shader_program, "Time"), time);
-				glUniform1f(glGetUniformLocation(shader_program, "fov"), fovScalar);
-				glUniform3f(glGetUniformLocation(shader_program, "pointLights[0].position"), 0.0f, 0.0, time);
-
-				testObject.DrawElements();
-				glLineWidth(3);
-				glPolygonMode(GL_FRONT, GL_LINE);
-
-				glDisable(GL_DEPTH_TEST);
-				glStencilMask(0xFF);
-				glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
-
-				glUseProgram(shader_intOutline);
-				glUniformMatrix3fv(glGetUniformLocation(shader_intOutline, "N"), 1, GL_TRUE, glm::value_ptr(N));
-				glUniformMatrix4fv(glGetUniformLocation(shader_intOutline, "M"), 1, GL_FALSE, glm::value_ptr(M));
-				glUniformMatrix4fv(glGetUniformLocation(shader_intOutline, "V"), 1, GL_FALSE, glm::value_ptr(V));
-				glUniformMatrix4fv(glGetUniformLocation(shader_intOutline, "P"), 1, GL_FALSE, glm::value_ptr(P));
-
-				testObject.DrawElements();
-				glStencilMask(0xFF);
-			}
-			//glDisable(GL_DEPTH_TEST);
-			glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
-			glPolygonMode(GL_FRONT, GL_FILL);
-			glUseProgram(shader_skyBox);
-			glUniform1i(glGetUniformLocation(shader_skyBox, "skybox"), 1);
-			glm::mat4 view = glm::mat4(glm::mat3(V));
-			glUniformMatrix4fv(glGetUniformLocation(shader_skyBox, "V"), 1, GL_FALSE, glm::value_ptr(view));
-			glUniformMatrix4fv(glGetUniformLocation(shader_skyBox, "P"), 1, GL_FALSE, glm::value_ptr(P));
-			skyBox.DrawArray();
-
-
-
-			glDisable(GL_STENCIL_TEST);
-			glPolygonMode(GL_FRONT, GL_FILL);
-
-			glUseProgram(shader_basic);
-			glUniform1i(glGetUniformLocation(shader_basic, "ourTexture1"), 2);
-
-			glm::mat4 M;
-			float imagescale = 6.0;
-
-			M = glm::rotate(M, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-			M = glm::scale(M, glm::vec3(imagescale,
-				imagescale*((float)window_height / window_width),
-				1.0));
-
-			glUniformMatrix4fv(glGetUniformLocation(shader_basic, "M"), 1, GL_FALSE, glm::value_ptr(M));
-			glUniformMatrix4fv(glGetUniformLocation(shader_basic, "V"), 1, GL_FALSE, glm::value_ptr(V));
-			glUniformMatrix4fv(glGetUniformLocation(shader_basic, "P"), 1, GL_FALSE, glm::value_ptr(P));
-
-			square.DrawElements();
-
-			
-
-
-		}
-		glEnable(GL_DEPTH_TEST);
-		glEnable(GL_STENCIL_TEST);
+		glm::mat4 M;
+		float imagescale = 6.0;
+		M = glm::rotate(M, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		M = glm::scale(M, glm::vec3(imagescale,	imagescale*((float)window_height / window_width),1.0));
+		glUniformMatrix4fv(glGetUniformLocation(shader_basic, "M"), 1, GL_FALSE, glm::value_ptr(M));
+		glUniformMatrix4fv(glGetUniformLocation(shader_basic, "V"), 1, GL_FALSE, glm::value_ptr(V));
+		glUniformMatrix4fv(glGetUniformLocation(shader_basic, "P"), 1, GL_FALSE, glm::value_ptr(P));
+		square.DrawElements();
 
 		frameCount++;
 		window.display();
-	}
-
+	};
 
 	glDeleteProgram(shader_program);
 
-
 	//glDeleteBuffers(1, &vbo);
 	//glDeleteBuffers(1, &ebo);
-	
 	//glDeleteVertexArrays(1, &vao);
  
 	window.close();

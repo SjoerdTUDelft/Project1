@@ -80,6 +80,18 @@
     <None Include="shaders\basic.vert">
       <Filter>shaders</Filter>
     </None>
+    <None Include="shaders\standardmaterialInstanced.frag">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\standardmaterialInstanced.vert">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\outlinematerialInstance.frag">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\outlinematerialInstance.vert">
+      <Filter>shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ShaderLoader.h">

@@ -144,12 +144,16 @@
     <None Include="shaders\basic.frag" />
     <None Include="shaders\basic.vert" />
     <None Include="shaders\blackstar.frag" />
+    <None Include="shaders\outlinematerialInstance.frag" />
+    <None Include="shaders\outlinematerialInstance.vert" />
     <None Include="shaders\postprocess.frag" />
     <None Include="shaders\postprocess.vert" />
     <None Include="shaders\skybox.frag" />
     <None Include="shaders\skybox.vert" />
     <None Include="shaders\standardmaterial.frag" />
     <None Include="shaders\standardmaterial.vert" />
+    <None Include="shaders\standardmaterialInstanced.frag" />
+    <None Include="shaders\standardmaterialInstanced.vert" />
     <None Include="shaders\testshader.frag" />
     <None Include="shaders\testshader.vert" />
   </ItemGroup>
